@@ -1,0 +1,164 @@
+---
+title: "Assignment 4 Textbook Exercises"
+author: "Doug Goon"
+date: "April 27, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+
+### 10.5
+1. How can you tell if an object is a tibble? (Hint: try printing mtcars, which is a regular data frame).
+```{r}
+is.tibble(mtcars)
+```
+
+2. Compare and contrast the following operations on a data.frame and equivalent tibble.
+What is different?
+Tibble doesn't allow for partial matching when subsetting. 
+```{r}
+df <- data.frame(abc = 1, xyz = "a")
+df_tibble <- tibble::tibble(abc = 1, xyz = "a")
+```
+
+```{r}
+#partial matching
+df$x 
+```
+
+```{r}
+#doesn't do partial matching
+df_tibble$x 
+```
+
+```{r}
+#becomes factor
+df[, "xyz"]
+```
+
+```{r}
+#returns tibble
+df_tibble [,"xyz"] 
+```
+
+```{r}
+#returns as factor type
+df[, c("abc", "xyz")] 
+```
+
+```{r}
+#return as character type
+df_tibble[, c("abc", "xyz")] 
+```
+
+Why might the default data frame behaviours cause you frustration?
+It might cause frustration because the functions might not work. 
+
+3. If you have the name of a variable stored in an object, e.g. var <- "mpg", how can you extract the reference variable from a tibble?
+```{r}
+var <- "abc"
+df_tibble[[var]]
+```
+
+4. Practice referring to non-syntactic names in the following data frame by
+```{r}
+annoying <- tibble(
+  `1` = 1:10,
+  `2` = `1` * 2 + rnorm(length(`1`))
+)
+```
+
+Extracting the variable called 1.
+```{r}
+annoying$`1`
+```
+
+Plotting a scatterplot of 1 vs 2.
+```{r}
+ggplot(data = annoying)+
+  geom_point(mapping = aes(x = `1`, y = `2`))
+```
+
+Creating a new column called 3 which is 2 divided by 1.
+```{r}
+annoying <-mutate(annoying,
+       `3` = `2`/`1`
+       )
+```
+
+Renaming the columns to one, two and three.
+```{r}
+dplyr::rename(annoying, One =`1`, Two = `2`, Three = `3`)
+```
+
+5.
+What does tibble::enframe() do? 
+
+tibble::enframe() converts named atomic vectors or lists to two-column data frames
+
+When might you use it?
+```{r}
+alphabet <- letters[1:10]
+enframe(alphabet)
+```
+
+6. What option controls how many additional column names are printed at the footer of a tibble?
+```{r}
+?print.tbl_df
+print(as_tibble(mtcars), n = 3)
+```
+
+12.6.1
+```{r}
+tidyr::who
+
+who %>%
+  gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(code = stringr::str_replace(code, "newrel", "new_rel")) %>%
+  separate(code, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+```
+
+3. I claimed that iso2 and iso3 were redundant with country. Confirm this claim.
+```{r}
+who %>% 
+  select(1:3) %>% 
+  sapply(function(x){length(unique(x))})
+```
+
+```{r}
+who %>% select(1:3) %>%
+  unite(combined, 1:3) %>%
+  select(combined) %>%
+  distinct() %>%
+  nrow()
+```
+Claim confirmed.
+
+4. For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
+```{r}
+who %>% 
+  gather(code, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(code = stringr::str_replace(code, "newrel", "new_rel")) %>%
+  separate(code, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1) %>%
+  group_by(country, year, sex) %>%
+  summarize(total_case = sum(value)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot() +
+  geom_line(mapping = aes(x = year, y = total_case, color = sex,
+                          group = country_sex))
+```
+
+

@@ -1,0 +1,48 @@
+---
+title: "Assignment 4 Tidy Data"
+author: "Doug Goon"
+date: "April 27, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(stringr)
+library(foreign)
+library(plyr)
+library(reshape2)
+source("pew.r")
+pewdf <- raw
+source("billboard.R")
+```
+
+Table 4 -> Table 6
+```{r}
+pew <- as.tibble(pewdf)
+pew%>% gather(-religion, key = "income", value = "frequency") %>% arrange(religion) %>% head(n=20)
+```
+
+Table 7 -> Table 8
+```{r}
+bb <- as.tibble(read.csv("billboard.csv"))
+bb.tidy <- bb %>% 
+  gather(key = "week", value = "rank" , -year, - artist.inverted, -track, -time, -genre, 
+  -date.entered, ... = -date.peaked)%>% 
+  select(year, artist=artist.inverted, time, track, date=date.entered, week, rank) %>% 
+  arrange(track)%>% 
+  filter(!is.na(rank))%>% 
+  separate(week, into=c("A","B","C"), sep=c(1:2), convert = F)%>% 
+  select(-A,-C) %>% 
+  dplyr::rename(week = B) %>% 
+  arrange(artist,track)%>% 
+  mutate(date=as.Date(date) +(as.numeric(week)-1)*7) %>% 
+  mutate(rank = as.integer(rank)) 
+bb.tidy
+```
